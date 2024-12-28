@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import sortBy from 'lodash/sortBy';
 import { useThrottle } from '@uidotdev/usehooks';
-import { waveformColorDark, waveformColorLight } from '../colors';
 
-import { renderWaveformPng } from '../ffmpeg';
+import { renderWaveformPng, safeCreateBlob } from '../ffmpeg';
 import { RenderableWaveform } from '../types';
 import { FFprobeStream } from '../../../../ffprobe';
 
@@ -11,8 +10,13 @@ import { FFprobeStream } from '../../../../ffprobe';
 const maxWaveforms = 100;
 // const maxWaveforms = 3; // testing
 
-export default ({ darkMode, filePath, relevantTime, durationSafe, waveformEnabled, audioStream, ffmpegExtractWindow }: {
-  darkMode: boolean, filePath: string | undefined, relevantTime: number, durationSafe: number, waveformEnabled: boolean, audioStream: FFprobeStream | undefined, ffmpegExtractWindow: number,
+export default ({ filePath, relevantTime, duration, waveformEnabled, audioStream, ffmpegExtractWindow }: {
+  filePath: string | undefined,
+  relevantTime: number,
+  duration: number | undefined,
+  waveformEnabled: boolean,
+  audioStream: FFprobeStream | undefined,
+  ffmpegExtractWindow: number,
 }) => {
   const creatingWaveformPromise = useRef<Promise<unknown>>();
   const [waveforms, setWaveforms] = useState<RenderableWaveform[]>([]);
@@ -22,15 +26,13 @@ export default ({ darkMode, filePath, relevantTime, durationSafe, waveformEnable
     waveformsRef.current = waveforms;
   }, [waveforms]);
 
-  const waveformColor = darkMode ? waveformColorDark : waveformColorLight;
-
   useEffect(() => {
     waveformsRef.current = [];
     setWaveforms([]);
   }, [filePath, audioStream, setWaveforms]);
 
   const waveformStartTime = Math.floor(relevantTime / ffmpegExtractWindow) * ffmpegExtractWindow;
-  const safeExtractDuration = Math.min(waveformStartTime + ffmpegExtractWindow, durationSafe) - waveformStartTime;
+  const safeExtractDuration = duration != null ? Math.min(waveformStartTime + ffmpegExtractWindow, duration) - waveformStartTime : undefined;
 
   const waveformStartTimeThrottled = useThrottle(waveformStartTime, 1000);
 
@@ -39,11 +41,11 @@ export default ({ darkMode, filePath, relevantTime, durationSafe, waveformEnable
 
     (async () => {
       const alreadyHaveWaveformAtTime = (waveformsRef.current ?? []).some((waveform) => waveform.from === waveformStartTimeThrottled);
-      const shouldRun = !!filePath && audioStream && waveformEnabled && !alreadyHaveWaveformAtTime && !creatingWaveformPromise.current;
+      const shouldRun = !!filePath && safeExtractDuration != null && audioStream && waveformEnabled && !alreadyHaveWaveformAtTime && !creatingWaveformPromise.current;
       if (!shouldRun) return;
 
       try {
-        const promise = renderWaveformPng({ filePath, start: waveformStartTimeThrottled, duration: safeExtractDuration, color: waveformColor, streamIndex: audioStream.index });
+        const promise = renderWaveformPng({ filePath, start: waveformStartTimeThrottled, duration: safeExtractDuration, color: '##000000', streamIndex: audioStream.index });
         creatingWaveformPromise.current = promise;
 
         setWaveforms((currentWaveforms) => {
@@ -72,9 +74,10 @@ export default ({ darkMode, filePath, relevantTime, durationSafe, waveformEnable
           if (w.from !== waveformStartTimeThrottled) {
             return w;
           }
+
           return {
             ...w,
-            url: URL.createObjectURL(new Blob([buffer], { type: 'image/png' })),
+            url: URL.createObjectURL(safeCreateBlob(buffer, { type: 'image/png' })),
           };
         }));
       } catch (err) {
@@ -87,7 +90,7 @@ export default ({ darkMode, filePath, relevantTime, durationSafe, waveformEnable
     return () => {
       aborted = true;
     };
-  }, [audioStream, filePath, safeExtractDuration, waveformColor, waveformEnabled, waveformStartTimeThrottled]);
+  }, [audioStream, filePath, safeExtractDuration, waveformEnabled, waveformStartTimeThrottled]);
 
   const lastWaveformsRef = useRef<RenderableWaveform[]>([]);
   useEffect(() => {
@@ -95,7 +98,10 @@ export default ({ darkMode, filePath, relevantTime, durationSafe, waveformEnable
     // Cleanup old
     // if (removedWaveforms.length > 0) console.log('cleanup waveforms', removedWaveforms.length);
     removedWaveforms.forEach((waveform) => {
-      if (waveform.url != null) URL.revokeObjectURL(waveform.url);
+      if (waveform.url != null) {
+        console.log('Cleanup waveform', waveform.from, waveform.to);
+        URL.revokeObjectURL(waveform.url);
+      }
     });
     lastWaveformsRef.current = waveforms;
   }, [waveforms]);

@@ -1,6 +1,6 @@
 import { memo, Fragment, useEffect, useMemo, useCallback, useState, ReactNode, SetStateAction, Dispatch, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SearchInput, PlusIcon, InlineAlert, UndoIcon, Paragraph, TakeActionIcon, IconButton, Button, DeleteIcon, AddIcon, Heading, Text, Dialog } from 'evergreen-ui';
+import { SearchInput, PlusIcon, InlineAlert, UndoIcon, Paragraph, TakeActionIcon, IconButton, Button, DeleteIcon, AddIcon, Dialog } from 'evergreen-ui';
 import { FaMouse, FaPlus, FaStepForward, FaStepBackward } from 'react-icons/fa';
 import Mousetrap from 'mousetrap';
 import groupBy from 'lodash/groupBy';
@@ -12,8 +12,9 @@ import Swal from '../swal';
 import SetCutpointButton from './SetCutpointButton';
 import SegmentCutpointButton from './SegmentCutpointButton';
 import { getModifier } from '../hooks/useTimelineScroll';
-import { KeyBinding, KeyboardAction } from '../../../../types';
+import { KeyBinding, KeyboardAction, ModifierKey } from '../../../../types';
 import { StateSegment } from '../types';
+import Sheet from './Sheet';
 
 
 type Category = string;
@@ -22,7 +23,7 @@ type ActionsMap = Record<KeyboardAction, { name: string, category?: Category, be
 
 const renderKeys = (keys: string[]) => keys.map((key, i) => (
   <Fragment key={key}>
-    {i > 0 && <FaPlus size={8} style={{ marginLeft: 4, marginRight: 4, color: 'rgba(0,0,0,0.5)' }} />}
+    {i > 0 && <FaPlus style={{ fontSize: '.4em', opacity: 0.8, marginLeft: '.4em', marginRight: '.4em' }} />}
     <kbd>{key.toUpperCase()}</kbd>
   </Fragment>
 ));
@@ -44,10 +45,14 @@ function fixKeys(keys: string[]) {
   return orderBy(uniqed, [(key) => key !== 'shift', (key) => key !== 'ctrl', (key) => key !== 'alt', (key) => key !== 'meta', (key) => key]);
 }
 
+// eslint-disable-next-line react/display-name
 const CreateBinding = memo(({
   actionsMap, action, setCreatingBinding, onNewKeyBindingConfirmed,
 }: {
-  actionsMap: ActionsMap, action: KeyboardAction | undefined, setCreatingBinding: Dispatch<SetStateAction<KeyboardAction | undefined>>, onNewKeyBindingConfirmed: (a: KeyboardAction, keys: string[]) => void,
+  actionsMap: ActionsMap,
+  action: KeyboardAction | undefined,
+  setCreatingBinding: Dispatch<SetStateAction<KeyboardAction | undefined>>,
+  onNewKeyBindingConfirmed: (a: KeyboardAction, keys: string[]) => void,
 }) => {
   const { t } = useTranslation();
 
@@ -115,8 +120,21 @@ const CreateBinding = memo(({
   );
 });
 
-const rowStyle = { display: 'flex', alignItems: 'center', margin: '.2em 0', borderBottom: '1px solid rgba(0,0,0,0.1)', paddingBottom: '.5em' };
+const rowStyle = { display: 'flex', alignItems: 'center', borderBottom: '1px solid rgba(0,0,0,0.1)', paddingBottom: '.2em' };
 
+function WheelModifier({ text, wheelText, modifier }: { text: string, wheelText: string, modifier: ModifierKey }) {
+  return (
+    <div style={{ ...rowStyle, alignItems: 'center' }}>
+      <span>{text}</span>
+      <div style={{ flexGrow: 1 }} />
+      {getModifier(modifier).map((v) => <kbd key={v} style={{ marginRight: '.7em' }}>{v}</kbd>)}
+      <FaMouse style={{ marginRight: '.3em' }} />
+      <span>{wheelText}</span>
+    </div>
+  );
+}
+
+// eslint-disable-next-line react/display-name
 const KeyboardShortcuts = memo(({
   keyBindings, setKeyBindings, resetKeyBindings, currentCutSeg,
 }: {
@@ -124,7 +142,7 @@ const KeyboardShortcuts = memo(({
 }) => {
   const { t } = useTranslation();
 
-  const { mouseWheelZoomModifierKey } = useUserSettings();
+  const { mouseWheelZoomModifierKey, mouseWheelFrameSeekModifierKey, mouseWheelKeyframeSeekModifierKey } = useUserSettings();
 
   const { actionsMap, extraLinesPerCategory } = useMemo(() => {
     const playbackCategory = t('Playback');
@@ -187,6 +205,10 @@ const KeyboardShortcuts = memo(({
         name: t('Decrease audio volume'),
         category: playbackCategory,
       },
+      toggleMuted: {
+        name: t('Mute preview'),
+        category: playbackCategory,
+      },
       reloadFile: {
         name: t('Reload current media'),
         category: playbackCategory,
@@ -224,11 +246,27 @@ const KeyboardShortcuts = memo(({
         category: seekingCategory,
       },
       seekBackwards: {
-        name: t('Seek backward 1 sec'),
+        name: t('Backward seek'),
         category: seekingCategory,
       },
       seekForwards: {
-        name: t('Seek forward 1 sec'),
+        name: t('Forward seek'),
+        category: seekingCategory,
+      },
+      seekBackwards2: {
+        name: t('Backward seek (longer)'),
+        category: seekingCategory,
+      },
+      seekForwards2: {
+        name: t('Forward seek (longer)'),
+        category: seekingCategory,
+      },
+      seekBackwards3: {
+        name: t('Backward seek (longest)'),
+        category: seekingCategory,
+      },
+      seekForwards3: {
+        name: t('Forward seek (longest)'),
         category: seekingCategory,
       },
       seekBackwardsKeyframe: {
@@ -299,6 +337,10 @@ const KeyboardShortcuts = memo(({
       },
       splitCurrentSegment: {
         name: t('Split segment at cursor'),
+        category: segmentsAndCutpointsCategory,
+      },
+      focusSegmentAtCursor: {
+        name: t('Focus segment at cursor'),
         category: segmentsAndCutpointsCategory,
       },
       duplicateCurrentSegment: {
@@ -578,6 +620,10 @@ const KeyboardShortcuts = memo(({
         name: t('Open'),
         category: otherCategory,
       },
+      openDirDialog: {
+        name: t('Open folder'),
+        category: otherCategory,
+      },
       exportYouTube: {
         name: t('Start times as YouTube Chapters'),
         category: otherCategory,
@@ -600,19 +646,17 @@ const KeyboardShortcuts = memo(({
     const extraLinesPerCategory: Record<Category, ReactNode> = {
       [zoomOperationsCategory]: [
         <div key="1" style={{ ...rowStyle, alignItems: 'center' }}>
-          <Text>{t('Zoom in/out timeline')}</Text>
+          <span>{t('Pan timeline')}</span>
           <div style={{ flexGrow: 1 }} />
-          <FaMouse style={{ marginRight: 3 }} />
-          <Text>{t('Mouse scroll/wheel up/down')}</Text>
+          <FaMouse style={{ marginRight: '.3em' }} />
+          <span>{t('Mouse scroll/wheel up/down')}</span>
         </div>,
 
-        <div key="2" style={{ ...rowStyle, alignItems: 'center' }}>
-          <Text>{t('Pan timeline')}</Text>
-          <div style={{ flexGrow: 1 }} />
-          {getModifier(mouseWheelZoomModifierKey).map((v) => <kbd key={v} style={{ marginRight: '.7em' }}>{v}</kbd>)}
-          <FaMouse style={{ marginRight: 3 }} />
-          <Text>{t('Mouse scroll/wheel up/down')}</Text>
-        </div>,
+        <WheelModifier key="2" text={t('Seek one frame')} wheelText={t('Mouse scroll/wheel up/down')} modifier={mouseWheelFrameSeekModifierKey} />,
+
+        <WheelModifier key="3" text={t('Seek one key frame')} wheelText={t('Mouse scroll/wheel up/down')} modifier={mouseWheelKeyframeSeekModifierKey} />,
+
+        <WheelModifier key="4" text={t('Zoom in/out timeline')} wheelText={t('Mouse scroll/wheel up/down')} modifier={mouseWheelZoomModifierKey} />,
       ],
     };
 
@@ -620,7 +664,7 @@ const KeyboardShortcuts = memo(({
       extraLinesPerCategory,
       actionsMap,
     };
-  }, [currentCutSeg, mouseWheelZoomModifierKey, t]);
+  }, [currentCutSeg, mouseWheelFrameSeekModifierKey, mouseWheelKeyframeSeekModifierKey, mouseWheelZoomModifierKey, t]);
 
   useEffect(() => {
     // cleanup invalid bindings, to prevent renamed actions from blocking user to rebind
@@ -642,10 +686,11 @@ const KeyboardShortcuts = memo(({
   }, []);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const actionEntries = useMemo(() => (Object.entries(actionsMap) as any as [keyof typeof actionsMap, typeof actionsMap[keyof typeof actionsMap]][]).filter(([, { name, category }]) => {
+  const actionEntries = useMemo(() => (Object.entries(actionsMap) as any as [keyof typeof actionsMap, typeof actionsMap[keyof typeof actionsMap]][]).filter(([key, { name, category }]) => {
     const searchQueryTrimmed = searchQuery.toLowerCase().trim();
     return (
       !searchQuery
+      || key.toLocaleLowerCase().includes(searchQueryTrimmed)
       || name.toLowerCase().includes(searchQueryTrimmed)
       || (category != null && category.toLowerCase().includes(searchQueryTrimmed))
     );
@@ -675,36 +720,48 @@ const KeyboardShortcuts = memo(({
 
   const stringifyKeys = (keys: string[]) => keys.join('+');
 
-  const onNewKeyBindingConfirmed = useCallback((action: KeyboardAction, keys: string[]) => {
+  const onNewKeyBindingConfirmed = useCallback(async (action: KeyboardAction, keys: string[]) => {
     const fixedKeys = fixKeys(keys);
     if (fixedKeys.length === 0) return;
     const keysStr = stringifyKeys(fixedKeys);
     console.log('new key binding', action, keysStr);
 
-    setKeyBindings((existingBindings) => {
-      const duplicate = existingBindings.find((existingBinding) => existingBinding.keys === keysStr);
-      if (duplicate) {
-        Swal.fire({ icon: 'error', title: t('Duplicate keyboard combination'), text: t('Combination is already bound to "{{alreadyBoundKey}}"', { alreadyBoundKey: actionsMap[duplicate.action]?.name }) });
-        console.log('trying to add duplicate');
-        return existingBindings;
+    const duplicate = keyBindings.find((existingBinding) => existingBinding.keys === keysStr);
+    let shouldReplaceDuplicate: KeyBinding | undefined;
+    if (duplicate) {
+      const { isConfirmed } = await Swal.fire({
+        icon: 'warning',
+        title: t('Duplicate keyboard combination'),
+        text: t('Combination is already bound to "{{alreadyBoundKey}}". Do you want to replace the existing binding?', { alreadyBoundKey: actionsMap[duplicate.action]?.name }),
+        confirmButtonText: t('Replace'),
+        focusCancel: true,
+        showCancelButton: true,
+      });
+      if (isConfirmed) {
+        shouldReplaceDuplicate = duplicate;
+      } else {
+        return;
       }
+    }
 
-      console.log('saving key binding');
+    setKeyBindings((existingBindings) => {
+      console.log('Saving key binding');
       setCreatingBinding(undefined);
-      return [...existingBindings, { action, keys: keysStr }];
+      const filtered = !shouldReplaceDuplicate ? existingBindings : existingBindings.filter((existing) => existing.keys !== shouldReplaceDuplicate.keys);
+      return [...filtered, { action, keys: keysStr }];
     });
-  }, [actionsMap, setKeyBindings, t]);
+  }, [actionsMap, keyBindings, setKeyBindings, t]);
 
   return (
     <>
-      <div style={{ color: 'black', marginBottom: '1em' }}>
-        <div>
+      <div style={{ marginBottom: '1em' }}>
+        <div style={{ marginBottom: '1em' }}>
           <SearchInput ref={searchInputRef} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search" width="100%" />
         </div>
 
         {categoriesWithActions.map(([category, actionsInCategory]) => (
           <div key={category}>
-            {category !== 'undefined' && <Heading marginTop={30} marginBottom={14}>{category}</Heading>}
+            {category !== 'undefined' && <div style={{ marginTop: '2em', marginBottom: '.7em', fontSize: '1.4em' }}>{category}</div>}
 
             {actionsInCategory.map(([action, actionObj]) => {
               const actionName = (actionObj && actionObj.name) || action;
@@ -716,8 +773,8 @@ const KeyboardShortcuts = memo(({
                 <div key={action} style={rowStyle}>
                   <div>
                     {beforeContent}
-                    <Text title={action} marginRight={10}>{actionName}</Text>
-                    <div style={{ fontSize: '.8em', opacity: 0.4 }} title={t('API action name: {{action}}', { action })}>{action}</div>
+                    <span title={action} style={{ marginRight: '.5em', opacity: 0.9 }}>{actionName}</span>
+                    <div style={{ fontSize: '.8em', opacity: 0.3 }} title={t('API action name: {{action}}', { action })}>{action}</div>
                   </div>
 
                   <div style={{ flexGrow: 1 }} />
@@ -731,7 +788,7 @@ const KeyboardShortcuts = memo(({
                       </div>
                     ))}
 
-                    {bindingsForThisAction.length === 0 && <Text color="muted">{t('No binding')}</Text>}
+                    {bindingsForThisAction.length === 0 && <span style={{ opacity: 0.8, fontSize: '.8em' }}>{t('No binding')}</span>}
                   </div>
 
                   <IconButton title={t('Bind new key to action')} appearance="minimal" intent="success" icon={AddIcon} onClick={() => onAddBindingClick(action)} />
@@ -751,26 +808,22 @@ const KeyboardShortcuts = memo(({
   );
 });
 
-const KeyboardShortcutsDialog = memo(({
+function KeyboardShortcutsDialog({
   isShown, onHide, keyBindings, setKeyBindings, resetKeyBindings, currentCutSeg,
 }: {
   isShown: boolean, onHide: () => void, keyBindings: KeyBinding[], setKeyBindings: Dispatch<SetStateAction<KeyBinding[]>>, resetKeyBindings: () => void, currentCutSeg: StateSegment,
-}) => {
+}) {
   const { t } = useTranslation();
 
   return (
-    <Dialog
-      title={t('Keyboard & mouse shortcuts')}
-      isShown={isShown}
-      confirmLabel={t('Done')}
-      hasCancel={false}
-      onCloseComplete={onHide}
-      onConfirm={onHide}
-      topOffset="3vh"
-    >
-      {isShown ? <KeyboardShortcuts keyBindings={keyBindings} setKeyBindings={setKeyBindings} currentCutSeg={currentCutSeg} resetKeyBindings={resetKeyBindings} /> : <div />}
-    </Dialog>
-  );
-});
+    <Sheet visible={isShown} onClosePress={onHide} maxWidth="40em" style={{ padding: '0 2em' }}>
+      <h2>{t('Keyboard & mouse shortcuts')}</h2>
 
-export default KeyboardShortcutsDialog;
+      <KeyboardShortcuts keyBindings={keyBindings} setKeyBindings={setKeyBindings} currentCutSeg={currentCutSeg} resetKeyBindings={resetKeyBindings} />
+      <Button onClick={onHide}>{t('Done')}</Button>
+
+    </Sheet>
+  );
+}
+
+export default memo(KeyboardShortcutsDialog);

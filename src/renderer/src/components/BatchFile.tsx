@@ -5,9 +5,9 @@ import { FaAngleRight, FaFile } from 'react-icons/fa';
 import useContextMenu from '../hooks/useContextMenu';
 import { primaryTextColor } from '../colors';
 
-const BatchFile = memo(({ path, isOpen, isSelected, name, onSelect, onDelete }: {
+function BatchFile({ path, isOpen, isSelected, name, onSelect, onDelete }: {
   path: string, isOpen: boolean, isSelected: boolean, name: string, onSelect: (a: string) => void, onDelete: (a: string) => void
-}) => {
+}) {
   const ref = useRef<HTMLDivElement>(null);
 
   const { t } = useTranslation();
@@ -18,14 +18,14 @@ const BatchFile = memo(({ path, isOpen, isSelected, name, onSelect, onDelete }: 
   useContextMenu(ref, contextMenuTemplate);
 
   return (
-    <div ref={ref} role="button" style={{ background: isSelected ? 'var(--gray6)' : undefined, fontSize: 13, padding: '3px 6px', display: 'flex', alignItems: 'center', alignContent: 'flex-start' }} title={path} onClick={() => onSelect(path)}>
-      <FaFile size={14} style={{ color: primaryTextColor, flexShrink: 0 }} />
+    <div ref={ref} role="button" style={{ background: isSelected ? 'var(--gray7)' : undefined, fontSize: 13, padding: '3px 6px', display: 'flex', alignItems: 'center', alignContent: 'flex-start' }} title={path} onClick={() => onSelect(path)}>
+      <FaFile size={14} style={{ color: isSelected ? primaryTextColor : undefined, flexShrink: 0 }} />
       <div style={{ flexBasis: 4, flexShrink: 0 }} />
       <div style={{ whiteSpace: 'nowrap', cursor: 'pointer', overflow: 'hidden' }}>{name}</div>
       <div style={{ flexGrow: 1 }} />
       {isOpen && <FaAngleRight size={14} style={{ color: 'var(--gray9)', marginRight: -5, flexShrink: 0 }} />}
     </div>
   );
-});
+}
 
-export default BatchFile;
+export default memo(BatchFile);

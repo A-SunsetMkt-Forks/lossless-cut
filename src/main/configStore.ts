@@ -1,7 +1,7 @@
 import Store from 'electron-store';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import electron from 'electron';
-import { join, dirname } from 'path';
+import { join, dirname } from 'node:path';
 import { pathExists } from 'fs-extra';
 
 import { KeyBinding, Config } from '../../types.js';
@@ -32,12 +32,14 @@ const defaultKeyBindings: KeyBinding[] = [
   { keys: 'g', action: 'goToTimecode' },
 
   { keys: 'left', action: 'seekBackwards' },
+  { keys: 'ctrl+shift+left', action: 'seekBackwards2' },
   { keys: 'ctrl+left', action: 'seekBackwardsPercent' },
   { keys: 'command+left', action: 'seekBackwardsPercent' },
   { keys: 'alt+left', action: 'seekBackwardsKeyframe' },
   { keys: 'shift+left', action: 'jumpCutStart' },
 
   { keys: 'right', action: 'seekForwards' },
+  { keys: 'ctrl+shift+right', action: 'seekForwards2' },
   { keys: 'ctrl+right', action: 'seekForwardsPercent' },
   { keys: 'command+right', action: 'seekForwardsPercent' },
   { keys: 'alt+right', action: 'seekForwardsKeyframe' },
@@ -81,6 +83,7 @@ const defaultKeyBindings: KeyBinding[] = [
 
   { keys: 'alt+up', action: 'increaseVolume' },
   { keys: 'alt+down', action: 'decreaseVolume' },
+  { keys: 'm', action: 'toggleMuted' },
 ];
 
 const defaults: Config = {
@@ -103,17 +106,23 @@ const defaults: Config = {
   wheelSensitivity: 0.2,
   language: undefined,
   ffmpegExperimental: false,
+  preserveChapters: true,
+  preserveMetadata: 'default',
+  preserveMetadataOnMerge: false,
   preserveMovData: false,
   movFastStart: true,
   avoidNegativeTs: 'make_zero',
   hideNotifications: undefined,
+  hideOsNotifications: undefined,
   autoLoadTimecode: false,
   segmentsToChapters: false,
-  preserveMetadataOnMerge: false,
   simpleMode: true,
   outSegTemplate: undefined,
+  mergedFileTemplate: undefined,
   keyboardSeekAccFactor: 1.03,
   keyboardNormalSeekSpeed: 1,
+  keyboardSeekSpeed2: 10,
+  keyboardSeekSpeed3: 60,
   treatInputFileModifiedTimeAsStart: true,
   treatOutputFileModifiedTimeAsStart: true,
   outFormatLocked: undefined,
@@ -125,6 +134,8 @@ const defaults: Config = {
   storeProjectInWorkingDir: true,
   enableOverwriteOutput: true,
   mouseWheelZoomModifierKey: 'ctrl',
+  mouseWheelFrameSeekModifierKey: 'alt',
+  mouseWheelKeyframeSeekModifierKey: 'shift',
   captureFrameMethod: 'videotag', // we don't default to ffmpeg because ffmpeg might choose a frame slightly off
   captureFrameQuality: 0.95,
   captureFrameFileNameFormat: 'timestamp',
@@ -138,20 +149,25 @@ const defaults: Config = {
   preferStrongColors: false,
   outputFileNameMinZeroPadding: 1,
   cutFromAdjustmentFrames: 0,
+  cutToAdjustmentFrames: 0,
   invertTimelineScroll: undefined,
+  storeWindowBounds: true,
 };
 
-// For portable app: https://github.com/mifi/lossless-cut/issues/645
-async function getCustomStoragePath() {
-  try {
-    if (!isWindows || process.windowsStore) return undefined;
+const configFileName = 'config.json'; // note: this is also hard-coded inside electron-store
 
+// look for a config.json file next to the executable
+// For portable app: https://github.com/mifi/lossless-cut/issues/645
+async function lookForNeighbourConfigFile() {
+  try {
     // https://github.com/mifi/lossless-cut/issues/645#issuecomment-1001363314
     // https://stackoverflow.com/questions/46307797/how-to-get-the-original-path-of-a-portable-electron-app
     // https://github.com/electron-userland/electron-builder/blob/master/docs/configuration/nsis.md
-    const customStorageDir = process.env['PORTABLE_EXECUTABLE_DIR'] || dirname(app.getPath('exe'));
-    const customConfigPath = join(customStorageDir, 'config.json');
-    if (await pathExists(customConfigPath)) return customStorageDir;
+    if (!isWindows || process.windowsStore) return undefined;
+    const appExeDir = process.env['PORTABLE_EXECUTABLE_DIR'] || dirname(app.getPath('exe'));
+    const customConfigPath = join(appExeDir, configFileName);
+    if (await pathExists(customConfigPath)) return appExeDir;
+
     return undefined;
   } catch (err) {
     logger.error('Failed to get custom storage path', err);
@@ -192,8 +208,12 @@ async function tryCreateStore({ customStoragePath }: { customStoragePath: string
   throw new Error('Timed out while creating config store');
 }
 
-export async function init() {
-  const customStoragePath = await getCustomStoragePath();
+let customStoragePath: string | undefined;
+
+export const getConfigPath = () => customStoragePath ?? join(app.getPath('userData'), configFileName); // custom path, or default used by electron-store
+
+export async function init({ customConfigDir }: { customConfigDir: string | undefined }) {
+  customStoragePath = customConfigDir ?? await lookForNeighbourConfigFile();
   if (customStoragePath) logger.info('customStoragePath', customStoragePath);
 
   await tryCreateStore({ customStoragePath });

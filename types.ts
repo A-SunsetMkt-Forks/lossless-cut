@@ -1,4 +1,4 @@
-export type KeyboardAction = 'addSegment' | 'togglePlayResetSpeed' | 'togglePlayNoResetSpeed' | 'reducePlaybackRate' | 'reducePlaybackRateMore' | 'increasePlaybackRate' | 'increasePlaybackRateMore' | 'timelineToggleComfortZoom' | 'seekPreviousFrame' | 'seekNextFrame' | 'captureSnapshot' | 'setCutStart' | 'setCutEnd' | 'removeCurrentSegment' | 'cleanupFilesDialog' | 'splitCurrentSegment' | 'increaseRotation' | 'goToTimecode' | 'seekBackwards' | 'seekBackwardsPercent' | 'seekBackwardsPercent' | 'seekBackwardsKeyframe' | 'jumpCutStart' | 'seekForwards' | 'seekForwardsPercent' | 'seekForwardsPercent' | 'seekForwardsKeyframe' | 'jumpCutEnd' | 'jumpTimelineStart' | 'jumpTimelineEnd' | 'jumpFirstSegment' | 'jumpPrevSegment' | 'timelineZoomIn' | 'timelineZoomIn' | 'batchPreviousFile' | 'jumpLastSegment' | 'jumpNextSegment' | 'timelineZoomOut' | 'timelineZoomOut' | 'batchNextFile' | 'batchOpenSelectedFile' | 'batchOpenPreviousFile' | 'batchOpenNextFile' | 'undo' | 'undo' | 'redo' | 'redo' | 'copySegmentsToClipboard' | 'copySegmentsToClipboard' | 'toggleFullscreenVideo' | 'labelCurrentSegment' | 'export' | 'toggleKeyboardShortcuts' | 'closeActiveScreen' | 'increaseVolume' | 'decreaseVolume' | 'detectBlackScenes' | 'detectSilentScenes' | 'detectSceneChanges' | 'toggleLastCommands' | 'play' | 'pause' | 'reloadFile' | 'html5ify' | 'togglePlayOnlyCurrentSegment' | 'toggleLoopOnlyCurrentSegment' | 'toggleLoopStartEndOnlyCurrentSegment' | 'toggleLoopSelectedSegments' | 'editCurrentSegmentTags' | 'duplicateCurrentSegment' | 'reorderSegsByStartTime' | 'invertAllSegments' | 'fillSegmentsGaps' | 'shiftAllSegmentTimes' | 'alignSegmentTimesToKeyframes' | 'createSegmentsFromKeyframes' | 'createFixedDurationSegments' | 'createNumSegments' | 'createRandomSegments' | 'shuffleSegments' | 'combineOverlappingSegments' | 'combineSelectedSegments' | 'clearSegments' | 'toggleSegmentsList' | 'selectOnlyCurrentSegment' | 'deselectAllSegments' | 'selectAllSegments' | 'toggleCurrentSegmentSelected' | 'invertSelectedSegments' | 'removeSelectedSegments' | 'toggleStreamsSelector' | 'extractAllStreams' | 'showStreamsSelector' | 'showIncludeExternalStreamsDialog' | 'captureSnapshotAsCoverArt' | 'extractCurrentSegmentFramesAsImages' | 'extractSelectedSegmentsFramesAsImages' | 'convertFormatBatch' | 'convertFormatCurrentFile' | 'fixInvalidDuration' | 'closeBatch' | 'concatBatch' | 'toggleKeyframeCutMode' | 'toggleCaptureFormat' | 'toggleStripAudio' | 'toggleStripThumbnail' | 'setStartTimeOffset' | 'toggleWaveformMode' | 'toggleShowThumbnails' | 'toggleShowKeyframes' | 'toggleSettings' | 'openSendReportDialog' | 'openFilesDialog' | 'exportYouTube' | 'closeCurrentFile' | 'quit';
+export type KeyboardAction = 'addSegment' | 'togglePlayResetSpeed' | 'togglePlayNoResetSpeed' | 'reducePlaybackRate' | 'reducePlaybackRateMore' | 'increasePlaybackRate' | 'increasePlaybackRateMore' | 'timelineToggleComfortZoom' | 'seekPreviousFrame' | 'seekNextFrame' | 'captureSnapshot' | 'setCutStart' | 'setCutEnd' | 'removeCurrentSegment' | 'cleanupFilesDialog' | 'splitCurrentSegment' | 'focusSegmentAtCursor' | 'increaseRotation' | 'goToTimecode' | 'seekBackwards' | 'seekBackwards2' | 'seekBackwards3' | 'seekBackwardsPercent' | 'seekBackwardsPercent' | 'seekBackwardsKeyframe' | 'jumpCutStart' | 'seekForwards' | 'seekForwards2' | 'seekForwards3' | 'seekForwardsPercent' | 'seekForwardsPercent' | 'seekForwardsKeyframe' | 'jumpCutEnd' | 'jumpTimelineStart' | 'jumpTimelineEnd' | 'jumpFirstSegment' | 'jumpPrevSegment' | 'timelineZoomIn' | 'timelineZoomIn' | 'batchPreviousFile' | 'jumpLastSegment' | 'jumpNextSegment' | 'timelineZoomOut' | 'timelineZoomOut' | 'batchNextFile' | 'batchOpenSelectedFile' | 'batchOpenPreviousFile' | 'batchOpenNextFile' | 'undo' | 'undo' | 'redo' | 'redo' | 'copySegmentsToClipboard' | 'copySegmentsToClipboard' | 'toggleFullscreenVideo' | 'labelCurrentSegment' | 'export' | 'toggleKeyboardShortcuts' | 'closeActiveScreen' | 'increaseVolume' | 'decreaseVolume' | 'toggleMuted' | 'detectBlackScenes' | 'detectSilentScenes' | 'detectSceneChanges' | 'toggleLastCommands' | 'play' | 'pause' | 'reloadFile' | 'html5ify' | 'togglePlayOnlyCurrentSegment' | 'toggleLoopOnlyCurrentSegment' | 'toggleLoopStartEndOnlyCurrentSegment' | 'toggleLoopSelectedSegments' | 'editCurrentSegmentTags' | 'duplicateCurrentSegment' | 'reorderSegsByStartTime' | 'invertAllSegments' | 'fillSegmentsGaps' | 'shiftAllSegmentTimes' | 'alignSegmentTimesToKeyframes' | 'createSegmentsFromKeyframes' | 'createFixedDurationSegments' | 'createNumSegments' | 'createRandomSegments' | 'shuffleSegments' | 'combineOverlappingSegments' | 'combineSelectedSegments' | 'clearSegments' | 'toggleSegmentsList' | 'selectOnlyCurrentSegment' | 'deselectAllSegments' | 'selectAllSegments' | 'toggleCurrentSegmentSelected' | 'invertSelectedSegments' | 'removeSelectedSegments' | 'toggleStreamsSelector' | 'extractAllStreams' | 'showStreamsSelector' | 'showIncludeExternalStreamsDialog' | 'captureSnapshotAsCoverArt' | 'extractCurrentSegmentFramesAsImages' | 'extractSelectedSegmentsFramesAsImages' | 'convertFormatBatch' | 'convertFormatCurrentFile' | 'fixInvalidDuration' | 'closeBatch' | 'concatBatch' | 'toggleKeyframeCutMode' | 'toggleCaptureFormat' | 'toggleStripAudio' | 'toggleStripThumbnail' | 'setStartTimeOffset' | 'toggleWaveformMode' | 'toggleShowThumbnails' | 'toggleShowKeyframes' | 'toggleSettings' | 'openSendReportDialog' | 'openFilesDialog' | 'openDirDialog' | 'exportYouTube' | 'closeCurrentFile' | 'quit';
 
 export interface KeyBinding {
   keys: string,
@@ -23,6 +23,7 @@ export const langNames = {
   pt: 'Português',
   pt_BR: 'Português do Brasil',
   sl: 'Slovenščina',
+  sk: 'slovenčina',
   fi: 'Suomi',
   ru: 'Русский',
   // sr: 'Cрпски',
@@ -40,6 +41,11 @@ export type LanguageKey = keyof typeof langNames;
 export type TimecodeFormat = 'timecodeWithDecimalFraction' | 'frameCount' | 'timecodeWithFramesFraction';
 
 export type AvoidNegativeTs = 'make_zero' | 'auto' | 'make_non_negative' | 'disabled';
+
+export type ModifierKey = 'ctrl' | 'shift' | 'alt' | 'meta';
+
+export type PreserveMetadata = 'default' | 'nonglobal' | 'none'
+
 
 export interface Config {
   captureFormat: CaptureFormat,
@@ -61,28 +67,37 @@ export interface Config {
   wheelSensitivity: number,
   language: LanguageKey | undefined,
   ffmpegExperimental: boolean,
+  preserveChapters: boolean,
+  preserveMetadata: PreserveMetadata,
+  preserveMetadataOnMerge: boolean,
   preserveMovData: boolean,
   movFastStart: boolean,
   avoidNegativeTs: AvoidNegativeTs,
   hideNotifications: 'all' | undefined,
+  hideOsNotifications: 'all' | undefined,
   autoLoadTimecode: boolean,
   segmentsToChapters: boolean,
-  preserveMetadataOnMerge: boolean,
   simpleMode: boolean,
   outSegTemplate: string | undefined,
+  mergedFileTemplate: string | undefined,
   keyboardSeekAccFactor: number,
   keyboardNormalSeekSpeed: number,
+  keyboardSeekSpeed2: number,
+  keyboardSeekSpeed3: number,
   treatInputFileModifiedTimeAsStart: boolean,
   treatOutputFileModifiedTimeAsStart: boolean | undefined | null,
   outFormatLocked: string | undefined,
   safeOutputFileName: boolean,
   windowBounds: { x: number, y: number, width: number, height: number } | undefined,
+  storeWindowBounds: boolean,
   enableAutoHtml5ify: boolean,
   keyBindings: KeyBinding[],
   customFfPath: string | undefined,
   storeProjectInWorkingDir: boolean,
   enableOverwriteOutput: boolean,
-  mouseWheelZoomModifierKey: string,
+  mouseWheelZoomModifierKey: ModifierKey,
+  mouseWheelFrameSeekModifierKey: ModifierKey,
+  mouseWheelKeyframeSeekModifierKey: ModifierKey,
   captureFrameMethod: 'videotag' | 'ffmpeg',
   captureFrameQuality: number,
   captureFrameFileNameFormat: 'timestamp' | 'index',
@@ -96,6 +111,7 @@ export interface Config {
   preferStrongColors: boolean,
   outputFileNameMinZeroPadding: number,
   cutFromAdjustmentFrames: number,
+  cutToAdjustmentFrames: number,
   invertTimelineScroll: boolean | undefined,
 }
 
@@ -103,9 +119,21 @@ export interface Waveform {
   buffer: Buffer,
 }
 
-export interface ApiKeyboardActionRequest {
+export interface ApiActionRequest {
   id: number
   action: string
+  args?: unknown[] | undefined,
 }
 
 export type Html5ifyMode = 'fastest' | 'fast-audio-remux' | 'fast-audio' | 'fast' | 'slow' | 'slow-audio' | 'slowest';
+
+export type WaveformMode = 'big-waveform' | 'waveform';
+
+// This is the contract with the user, see https://github.com/mifi/lossless-cut/blob/master/expressions.md
+export interface ScopeSegment {
+  label: string,
+  start: number,
+  end: number,
+  duration: number,
+  tags: Record<string, string>,
+}

@@ -26,6 +26,7 @@ const buttonBaseStyle = {
 
 const neutralButtonColor = 'var(--gray8)';
 
+// eslint-disable-next-line react/display-name
 const Segment = memo(({
   seg,
   index,
@@ -44,7 +45,7 @@ const Segment = memo(({
   onToggleSegmentSelected,
   onDeselectAllSegments,
   onSelectSegmentsByLabel,
-  onSelectSegmentsByTag,
+  onSelectSegmentsByExpr,
   onSelectAllSegments,
   jumpSegStart,
   jumpSegEnd,
@@ -71,7 +72,7 @@ const Segment = memo(({
   onToggleSegmentSelected: UseSegments['toggleSegmentSelected'],
   onDeselectAllSegments: UseSegments['deselectAllSegments'],
   onSelectSegmentsByLabel: UseSegments['onSelectSegmentsByLabel'],
-  onSelectSegmentsByTag: UseSegments['onSelectSegmentsByTag'],
+  onSelectSegmentsByExpr: UseSegments['onSelectSegmentsByExpr'],
   onSelectAllSegments: UseSegments['selectAllSegments'],
   jumpSegStart: (i: number) => void,
   jumpSegEnd: (i: number) => void,
@@ -109,7 +110,7 @@ const Segment = memo(({
       { label: t('Select all segments'), click: () => onSelectAllSegments() },
       { label: t('Deselect all segments'), click: () => onDeselectAllSegments() },
       { label: t('Select segments by label'), click: () => onSelectSegmentsByLabel() },
-      { label: t('Select segments by tag'), click: () => onSelectSegmentsByTag() },
+      { label: t('Select segments by expression'), click: () => onSelectSegmentsByExpr() },
       { label: t('Invert selected segments'), click: () => onInvertSelectedSegments() },
 
       { type: 'separator' },
@@ -128,7 +129,7 @@ const Segment = memo(({
       { label: t('Segment tags'), click: () => onEditSegmentTags(index) },
       { label: t('Extract frames as image files'), click: () => onExtractSegmentFramesAsImages([seg.segId]) },
     ];
-  }, [invertCutSegments, t, addSegment, onLabelSelectedSegments, onRemoveSelected, updateSegOrder, index, jumpSegStart, jumpSegEnd, onLabelPress, onRemovePress, onDuplicateSegmentClick, seg, onSelectSingleSegment, onSelectAllSegments, onDeselectAllSegments, onSelectSegmentsByLabel, onSelectSegmentsByTag, onInvertSelectedSegments, onReorderPress, onEditSegmentTags, onExtractSegmentFramesAsImages]);
+  }, [invertCutSegments, t, addSegment, onLabelSelectedSegments, onRemoveSelected, updateSegOrder, index, jumpSegStart, jumpSegEnd, onLabelPress, onRemovePress, onDuplicateSegmentClick, seg, onSelectSingleSegment, onSelectAllSegments, onDeselectAllSegments, onSelectSegmentsByLabel, onSelectSegmentsByExpr, onInvertSelectedSegments, onReorderPress, onEditSegmentTags, onExtractSegmentFramesAsImages]);
 
   useContextMenu(ref, contextMenuTemplate);
 
@@ -218,7 +219,7 @@ const Segment = memo(({
   );
 });
 
-const SegmentList = memo(({
+function SegmentList({
   width,
   formatTimecode,
   apparentCutSegments,
@@ -243,7 +244,7 @@ const SegmentList = memo(({
   onDeselectAllSegments,
   onSelectAllSegments,
   onSelectSegmentsByLabel,
-  onSelectSegmentsByTag,
+  onSelectSegmentsByExpr,
   onExtractSegmentFramesAsImages,
   onLabelSelectedSegments,
   onInvertSelectedSegments,
@@ -281,7 +282,7 @@ const SegmentList = memo(({
   onDeselectAllSegments: UseSegments['deselectAllSegments'],
   onSelectAllSegments: UseSegments['selectAllSegments'],
   onSelectSegmentsByLabel: UseSegments['onSelectSegmentsByLabel'],
-  onSelectSegmentsByTag: UseSegments['onSelectSegmentsByTag'],
+  onSelectSegmentsByExpr: UseSegments['onSelectSegmentsByExpr'],
   onExtractSegmentFramesAsImages: (segIds: string[]) => Promise<void>,
   onLabelSelectedSegments: UseSegments['onLabelSelectedSegments'],
   onInvertSelectedSegments: UseSegments['invertSelectedSegments'],
@@ -294,7 +295,7 @@ const SegmentList = memo(({
   setEditingSegmentTags: Dispatch<SetStateAction<SegmentTags | undefined>>,
   setEditingSegmentTagsSegmentIndex: Dispatch<SetStateAction<number | undefined>>,
   onEditSegmentTags: (index: number) => void,
-}) => {
+}) {
   const { t } = useTranslation();
   const { getSegColor } = useSegColors();
 
@@ -318,7 +319,6 @@ const SegmentList = memo(({
 
   const onReorderSegs = useCallback(async (index: number) => {
     if (apparentCutSegments.length < 2) return;
-    // @ts-expect-error todo
     const { value } = await Swal.fire({
       title: `${t('Change order of segment')} ${index + 1}`,
       text: `Please enter a number from 1 to ${apparentCutSegments.length} to be the new order for the current segment`,
@@ -338,7 +338,7 @@ const SegmentList = memo(({
   }, [apparentCutSegments.length, t, updateSegOrder]);
 
   function renderFooter() {
-    const getButtonColor = (seg) => getSegColor(seg).desaturate(0.3).lightness(darkMode ? 45 : 55).string();
+    const getButtonColor = (seg: StateSegment | undefined) => getSegColor(seg).desaturate(0.3).lightness(darkMode ? 45 : 55).string();
     const currentSegColor = getButtonColor(currentCutSeg);
     const segAtCursorColor = getButtonColor(segmentAtCursor);
 
@@ -390,6 +390,14 @@ const SegmentList = memo(({
             style={{ ...buttonBaseStyle, padding: 1, background: segmentAtCursor ? segAtCursorColor : neutralButtonColor }}
             onClick={splitCurrentSegment}
           />
+
+          <FaRegCheckCircle
+            size={22}
+            title={t('Invert selected segments')}
+            role="button"
+            style={{ ...buttonBaseStyle, padding: 1, background: segmentAtCursor ? segAtCursorColor : neutralButtonColor }}
+            onClick={onInvertSelectedSegments}
+          />
         </div>
 
         <div style={{ padding: '5px 10px', boxSizing: 'border-box', borderBottom: '1px solid var(gray6)', borderTop: '1px solid var(gray6)', display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
@@ -400,11 +408,11 @@ const SegmentList = memo(({
     );
   }
 
-  const [editingTag, setEditingTag] = useState();
+  const [editingTag, setEditingTag] = useState<string>();
 
-  const onTagChange = useCallback((tag: string, value: string) => setEditingSegmentTags((existingTags) => ({
+  const onTagsChange = useCallback((keyValues: Record<string, string>) => setEditingSegmentTags((existingTags) => ({
     ...existingTags,
-    [tag]: value,
+    ...keyValues,
   })), [setEditingSegmentTags]);
 
   const onTagReset = useCallback((tag: string) => setEditingSegmentTags((tags) => {
@@ -437,7 +445,7 @@ const SegmentList = memo(({
         onCloseComplete={onSegmentTagsCloseComplete}
       >
         <div style={{ color: 'black' }}>
-          <TagEditor customTags={editingSegmentTags} editingTag={editingTag} setEditingTag={setEditingTag} onTagChange={onTagChange} onTagReset={onTagReset} addTagTitle={t('Add segment tag')} addTagText={t('Enter tag key')} />
+          <TagEditor customTags={editingSegmentTags} editingTag={editingTag} setEditingTag={setEditingTag} onTagsChange={onTagsChange} onTagReset={onTagReset} addTagTitle={t('Add segment tag')} addTagText={t('Enter tag key')} />
         </div>
       </Dialog>
 
@@ -460,7 +468,7 @@ const SegmentList = memo(({
           {header}
         </div>
 
-        <div style={{ padding: '0 10px', overflowY: 'scroll', flexGrow: 1 }} className="hide-scrollbar">
+        <div style={{ padding: '0 .1em 0 .3em', overflowX: 'hidden', overflowY: 'scroll', flexGrow: 1 }} className="consistent-scrollbar">
           <ReactSortable list={sortableList} setList={setSortableList} disabled={!!invertCutSegments} handle=".segment-handle">
             {sortableList.map(({ id, seg }, index) => {
               const selected = !invertCutSegments && isSegmentSelected({ segId: seg.segId });
@@ -488,7 +496,7 @@ const SegmentList = memo(({
                   onSelectAllSegments={onSelectAllSegments}
                   onEditSegmentTags={onEditSegmentTags}
                   onSelectSegmentsByLabel={onSelectSegmentsByLabel}
-                  onSelectSegmentsByTag={onSelectSegmentsByTag}
+                  onSelectSegmentsByExpr={onSelectSegmentsByExpr}
                   onExtractSegmentFramesAsImages={onExtractSegmentFramesAsImages}
                   onLabelSelectedSegments={onLabelSelectedSegments}
                   onInvertSelectedSegments={onInvertSelectedSegments}
@@ -503,6 +511,6 @@ const SegmentList = memo(({
       </motion.div>
     </>
   );
-});
+}
 
-export default SegmentList;
+export default memo(SegmentList);

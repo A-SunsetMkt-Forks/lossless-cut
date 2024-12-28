@@ -1,9 +1,11 @@
-import { memo, useState, useCallback, useRef, useEffect } from 'react';
+import { memo, useState, useCallback, useRef, useEffect, ChangeEventHandler, ChangeEvent } from 'react';
 import { MdSubtitles } from 'react-icons/md';
 import { useTranslation } from 'react-i18next';
 import Select from './Select';
 
-const PlaybackStreamSelector = memo(({
+import { FFprobeStream } from '../../../../ffprobe';
+
+function PlaybackStreamSelector({
   subtitleStreams,
   videoStreams,
   audioStreams,
@@ -14,16 +16,16 @@ const PlaybackStreamSelector = memo(({
   onActiveVideoStreamChange,
   onActiveAudioStreamChange,
 }: {
-  subtitleStreams,
-  videoStreams,
-  audioStreams,
+  subtitleStreams: FFprobeStream[],
+  videoStreams: FFprobeStream[],
+  audioStreams: FFprobeStream[],
   activeSubtitleStreamIndex?: number | undefined,
   activeVideoStreamIndex?: number | undefined,
   activeAudioStreamIndex?: number | undefined,
   onActiveSubtitleChange: (a?: number | undefined) => void,
   onActiveVideoStreamChange: (a?: number | undefined) => void,
   onActiveAudioStreamChange: (a?: number | undefined) => void,
-}) => {
+}) {
   const [controlVisible, setControlVisible] = useState(false);
   const timeoutRef = useRef<number>();
 
@@ -34,16 +36,16 @@ const PlaybackStreamSelector = memo(({
     timeoutRef.current = window.setTimeout(() => setControlVisible(false), 7000);
   }, []);
 
-  const onChange = useCallback((e, fn) => {
+  const onChange = useCallback((e: ChangeEvent<HTMLSelectElement>, fn: (a: number | undefined) => void) => {
     resetTimer();
     const index = e.target.value ? parseInt(e.target.value, 10) : undefined;
     fn(index);
     e.target.blur();
   }, [resetTimer]);
 
-  const onActiveSubtitleChange2 = useCallback((e) => onChange(e, onActiveSubtitleChange), [onActiveSubtitleChange, onChange]);
-  const onActiveVideoStreamChange2 = useCallback((e) => onChange(e, onActiveVideoStreamChange), [onActiveVideoStreamChange, onChange]);
-  const onActiveAudioStreamChange2 = useCallback((e) => onChange(e, onActiveAudioStreamChange), [onActiveAudioStreamChange, onChange]);
+  const onActiveSubtitleChange2 = useCallback<ChangeEventHandler<HTMLSelectElement>>((e) => onChange(e, onActiveSubtitleChange), [onActiveSubtitleChange, onChange]);
+  const onActiveVideoStreamChange2 = useCallback<ChangeEventHandler<HTMLSelectElement>>((e) => onChange(e, onActiveVideoStreamChange), [onActiveVideoStreamChange, onChange]);
+  const onActiveAudioStreamChange2 = useCallback<ChangeEventHandler<HTMLSelectElement>>((e) => onChange(e, onActiveAudioStreamChange), [onActiveAudioStreamChange, onChange]);
 
   const onIconClick = useCallback(() => {
     resetTimer();
@@ -69,7 +71,7 @@ const PlaybackStreamSelector = memo(({
             </Select>
           )}
 
-          {videoStreams.length > 1 && (
+          {videoStreams.length > 0 && (
             <Select
               value={activeVideoStreamIndex ?? ''}
               onChange={onActiveVideoStreamChange2}
@@ -82,7 +84,7 @@ const PlaybackStreamSelector = memo(({
             </Select>
           )}
 
-          {audioStreams.length > 1 && (
+          {audioStreams.length > 0 && (
             <Select
               value={activeAudioStreamIndex ?? ''}
               onChange={onActiveAudioStreamChange2}
@@ -105,6 +107,6 @@ const PlaybackStreamSelector = memo(({
       />
     </>
   );
-});
+}
 
-export default PlaybackStreamSelector;
+export default memo(PlaybackStreamSelector);

@@ -1,11 +1,11 @@
-import { readFile, writeFile } from 'fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { XMLParser, XMLBuilder } from 'fast-xml-parser';
 import { DateTime } from 'luxon';
 
 const xmlUrl = new URL('../no.mifi.losslesscut.appdata.xml', import.meta.url);
 const xmlData = await readFile(xmlUrl);
 
-const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url)) as unknown as string);
+const packageJson = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 
 const parser = new XMLParser({ alwaysCreateTextNode: true, ignoreAttributes: false, ignoreDeclaration: false });
 const xml = parser.parse(xmlData);

@@ -1,6 +1,7 @@
-import SwalRaw, { SweetAlertOptions } from 'sweetalert2';
-
-import { primaryColor } from './colors';
+import SwalRaw from 'sweetalert2/dist/sweetalert2.js';
+import type { SweetAlertOptions } from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content';
+import i18n from './i18n';
 
 
 const { systemPreferences } = window.require('@electron/remote');
@@ -8,7 +9,7 @@ const { systemPreferences } = window.require('@electron/remote');
 const animationSettings = systemPreferences.getAnimationSettings();
 
 let commonSwalOptions: SweetAlertOptions = {
-  confirmButtonColor: primaryColor,
+  target: '#swal2-container-wrapper',
 };
 
 if (animationSettings.prefersReducedMotion) {
@@ -36,6 +37,7 @@ export default Swal;
 export const swalToastOptions: SweetAlertOptions = {
   ...commonSwalOptions,
   toast: true,
+  width: '50vw',
   position: 'top',
   showConfirmButton: false,
   showCloseButton: true,
@@ -49,7 +51,11 @@ export const swalToastOptions: SweetAlertOptions = {
 
 export const toast = Swal.mixin(swalToastOptions);
 
-export const errorToast = (text) => toast.fire({
+export const errorToast = (text: string) => toast.fire({
   icon: 'error',
   text,
 });
+
+export const showPlaybackFailedMessage = () => errorToast(i18n.t('Unable to playback this file. Try to convert to supported format from the menu'));
+
+export const ReactSwal = withReactContent(Swal);

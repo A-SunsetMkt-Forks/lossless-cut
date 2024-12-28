@@ -1,4 +1,6 @@
 import type { MenuItem, MenuItemConstructorOptions } from 'electron';
+import { z } from 'zod';
+import { FFprobeChapter, FFprobeFormat, FFprobeStream } from '../../../ffprobe';
 
 
 export interface ChromiumHTMLVideoElement extends HTMLVideoElement {
@@ -18,13 +20,22 @@ export interface SegmentColorIndex {
   segColorIndex: number,
 }
 
-export interface ApparentSegmentBase extends SegmentColorIndex {
+export interface ApparentSegmentBase {
   start: number,
   end: number,
 }
 
+export interface ApparentSegmentWithColorIndex extends ApparentSegmentBase, SegmentColorIndex {}
 
-export type SegmentTags = Record<string, unknown>;
+export const openFilesActionArgsSchema = z.tuple([z.string().array()]);
+export type OpenFilesActionArgs = z.infer<typeof openFilesActionArgsSchema>
+
+export const goToTimecodeDirectArgsSchema = z.tuple([z.object({ time: z.string() })]);
+export type GoToTimecodeDirectArgs = z.infer<typeof goToTimecodeDirectArgsSchema>
+
+export const segmentTagsSchema = z.record(z.string(), z.string());
+
+export type SegmentTags = z.infer<typeof segmentTagsSchema>
 
 export type EditingSegmentTags = Record<string, SegmentTags>
 
@@ -38,7 +49,7 @@ export interface Segment extends SegmentBase {
   name?: string | undefined,
 }
 
-export interface ApparentCutSegment extends ApparentSegmentBase {
+export interface ApparentCutSegment extends ApparentSegmentWithColorIndex {
   name: string;
   segId: string,
   tags?: SegmentTags | undefined;
@@ -61,13 +72,13 @@ export interface InverseCutSegment {
 
 export type PlaybackMode = 'loop-segment-start-end' | 'loop-segment' | 'play-segment-once' | 'loop-selected-segments';
 
-export type EdlFileType = 'csv' | 'csv-frames' | 'xmeml' | 'fcpxml' | 'dv-analyzer-summary-txt' | 'cue' | 'pbf' | 'mplayer' | 'srt' | 'llc';
+export type EdlFileType = 'csv' | 'csv-frames' | 'cutlist' | 'xmeml' | 'fcpxml' | 'dv-analyzer-summary-txt' | 'cue' | 'pbf' | 'edl' | 'srt' | 'llc';
 
 export type EdlImportType = 'youtube' | EdlFileType;
 
 export type EdlExportType = 'csv' | 'tsv-human' | 'csv-human' | 'csv-frames' | 'srt' | 'llc';
 
-export type TunerType = 'wheelSensitivity' | 'keyboardNormalSeekSpeed' | 'keyboardSeekAccFactor';
+export type TunerType = 'wheelSensitivity' | 'keyboardNormalSeekSpeed' | 'keyboardSeekSpeed2' | 'keyboardSeekSpeed3' | 'keyboardSeekAccFactor';
 
 export interface RenderableWaveform {
   createdAt: Date,
@@ -85,6 +96,7 @@ export interface Thumbnail {
 }
 
 export type FormatTimecode = (a: { seconds: number, shorten?: boolean | undefined, fileNameFriendly?: boolean | undefined }) => string;
+export type ParseTimecode = (val: string) => number | undefined;
 
 export type GetFrameCount = (sec: number) => number | undefined;
 
@@ -93,3 +105,34 @@ export type UpdateSegAtIndex = (index: number, newProps: Partial<StateSegment>) 
 export type ContextMenuTemplate = (MenuItemConstructorOptions | MenuItem)[];
 
 export type ExportMode = 'segments_to_chapters' | 'merge' | 'merge+separate' | 'separate';
+
+export type FilesMeta = Record<string, {
+  streams: FFprobeStream[];
+  formatData: FFprobeFormat;
+  chapters: FFprobeChapter[];
+}>
+
+export type CopyfileStreams = {
+  path: string;
+  streamIds: number[];
+}[]
+
+export interface Chapter { start: number, end: number, name?: string | undefined }
+
+export type LiteFFprobeStream = Pick<FFprobeStream, 'index' | 'codec_type' | 'codec_tag' | 'codec_name' | 'disposition' | 'tags' | 'sample_rate' | 'time_base'>;
+
+export type AllFilesMeta = Record<string, {
+  streams: LiteFFprobeStream[];
+  formatData: FFprobeFormat;
+  chapters: FFprobeChapter[];
+}>
+
+export type CustomTagsByFile = Record<string, Record<string, string>>;
+
+export interface StreamParams {
+  customTags?: Record<string, string>,
+  disposition?: string,
+  bsfH264Mp4toannexb?: boolean,
+  bsfHevcMp4toannexb?: boolean,
+}
+export type ParamsByStreamId = Map<string, Map<number, StreamParams>>;
